@@ -6,6 +6,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.*;
 import java.util.*;
+
 import org.springframework.cloud.gcp.core.GcpProjectIdProvider;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.context.ApplicationContext;
@@ -13,7 +14,6 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.WritableResource;
 import org.springframework.util.StreamUtils;
 import java.io.*;
-import org.springframework.http.*;
 
 
 @Controller
@@ -21,17 +21,18 @@ import org.springframework.http.*;
 public class FrontendController {
 	@Autowired
 	private GuestbookMessagesClient client;
-	
-	@Value("${greeting:Hello}")
-	private String greeting;
-	
+
 	@Autowired
 	private OutboundGateway outboundGateway;
-	
+
+	@Value("${greeting:Hello}")
+	private String greeting;
+
 	// We need the ApplicationContext in order to create a new Resource.
 	@Autowired
 	private ApplicationContext context;
 
+	// We need to know the Project ID, because it's Cloud Storage bucket name
 	@Autowired
 	private GcpProjectIdProvider projectIdProvider;
 
@@ -49,7 +50,7 @@ public class FrontendController {
 	@PostMapping("/post")
 	public String post(@RequestParam(name="file", required=false) MultipartFile file, @RequestParam String name, @RequestParam String message, Model model) throws IOException {
 		model.addAttribute("name", name);
-		
+
 		String filename = null;
 		if (file != null && !file.isEmpty()
 			&& file.getContentType().equals("image/jpeg")) {
@@ -70,20 +71,10 @@ public class FrontendController {
 			payload.put("message", message);
 			payload.put("imageUri", filename);
 			client.add(payload);
-			
+
 			outboundGateway.publishMessage(name + ": " + message);
 		}
 		return "redirect:/";
   }
-  
-  // ".+" is necessary to capture URI with filename extension
-	@GetMapping("/image/{filename:.+}")
-	public ResponseEntity<Resource> file(@PathVariable String filename) {
-		String bucket = "gs://" + projectIdProvider.getProjectId();
-		Resource image = context.getResource(bucket + "/" + filename);
-		HttpHeaders headers = new HttpHeaders();
-		headers.setContentType(MediaType.IMAGE_JPEG);
-		return new ResponseEntity<>(image, headers, HttpStatus.OK);
-	}
-
 }
+
