@@ -12,12 +12,12 @@ import java.util.*;
 public class FrontendController {
 	@Autowired
 	private GuestbookMessagesClient client;
-	
-	@Value("${greeting:Hello}")
-	private String greeting;
-	
+
 	@Autowired
 	private OutboundGateway outboundGateway;
+
+	@Value("${greeting:Hello}")
+	private String greeting;
 	
 	@GetMapping("/")
 	public String index(Model model) {
@@ -38,9 +38,10 @@ public class FrontendController {
 			payload.put("name", name);
 			payload.put("message", message);
 			client.add(payload);
-			
+
 			outboundGateway.publishMessage(name + ": " + message);
 		}
 		return "redirect:/";
   }
 }
+
