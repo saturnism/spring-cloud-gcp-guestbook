@@ -7,7 +7,7 @@ import lombok.*;
 @Data
 public class GuestbookMessage {
 	@Id
-	@GeneratedValue
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 	
 	private String name;
