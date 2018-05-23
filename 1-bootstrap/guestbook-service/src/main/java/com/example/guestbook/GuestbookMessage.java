@@ -16,3 +16,4 @@ public class GuestbookMessage {
 	
 	private String imageUri;
 }
+

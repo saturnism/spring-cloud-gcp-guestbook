@@ -1,6 +1,6 @@
 package com.example.frontend;
 
-import org.springframework.cloud.netflix.feign.FeignClient;
+import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.hateoas.*;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
@@ -21,3 +21,4 @@ public interface GuestbookMessagesClient {
 	@RequestMapping(method=RequestMethod.POST, path="/")
 	Resource<Map> add(@RequestBody Map message);
 }
+
