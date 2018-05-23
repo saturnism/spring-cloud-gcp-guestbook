@@ -7,3 +7,4 @@ import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 public interface GuestbookMessageRepository extends 
 	PagingAndSortingRepository<GuestbookMessage, Long> {
 }
+
