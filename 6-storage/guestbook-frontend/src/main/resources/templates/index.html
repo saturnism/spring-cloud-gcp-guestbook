@@ -27,8 +27,11 @@
 <div class="main container">
     <div class="input">
         <form action="/post" method="post">
-            <span>Your name:</span><input type="text" name="name" th:value="${name}"/>
+            <span>Your name:</span><input type="text" name="name" th:value="${name}" enctype="multipart/form-data"/>
             <span>Message:</span><input type="text" name="message"/>
+            <!-- Add a file input -->
+            <span>File:</span>
+            <input type="file" name="file" accept=".jpg, image/jpeg"/>
             <input type="submit" value="Post"/>
         </form>
     </div>
@@ -41,6 +44,9 @@
         <div th:each="message: ${messages}" class="message">
             <span th:text="${message.name}" class="username">Username</span>
             <span th:text="${message.message}" class="message">Message</span>
+            <img th:src="'/image/' + ${message.imageUri}"
+                alt="image" height="40px"
+                th:unless="${#strings.isEmpty(message.imageUri)}"/>
         </div>
     </div>
 
