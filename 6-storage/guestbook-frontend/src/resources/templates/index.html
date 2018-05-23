@@ -45,6 +45,10 @@
         <div th:each="message: ${messages}" class="message">
             <span th:text="${message.name}" class="username">Username</span>
             <span th:text="${message.message}" class="message">Message</span>
+            <img th:src="'/image/' + ${message.imageUri}"
+                alt="image" height="40px"
+                th:unless="${#strings.isEmpty(message.imageUri)}"/>
+
         </div>
     </div>
 
