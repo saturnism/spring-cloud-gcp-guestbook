@@ -29,7 +29,7 @@
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-gcp-dependencies</artifactId>
-				<version>1.0.0.M2</version>
+				<version>1.0.0.RC1</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
@@ -92,10 +92,12 @@
 
 	<repositories>
 		<repository>
-		<id>repository.spring.milestone</id>
-		<name>Spring Milestones Repository</name>
-		<url>http://repo.spring.io/milestone</url>
+			<id>spring-milestones</id>
+			<name>Spring Milestones</name>
+			<url>https://repo.spring.io/libs-milestone</url>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
 		</repository>
 	</repositories>
-
 </project>

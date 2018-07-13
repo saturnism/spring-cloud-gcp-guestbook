@@ -6,6 +6,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.*;
 import java.util.*;
+import org.springframework.cloud.gcp.pubsub.core.*;
 
 @Controller
 @SessionAttributes("name")
@@ -14,11 +15,11 @@ public class FrontendController {
 	private GuestbookMessagesClient client;
 
 	@Autowired
-	private OutboundGateway outboundGateway;
-
+	private PubSubTemplate pubSubTemplate;
+	
 	@Value("${greeting:Hello}")
 	private String greeting;
-	
+
 	@GetMapping("/")
 	public String index(Model model) {
 		if (model.containsAttribute("name")) {
@@ -39,7 +40,7 @@ public class FrontendController {
 			payload.put("message", message);
 			client.add(payload);
 
-			outboundGateway.publishMessage(name + ": " + message);
+			pubSubTemplate.publish("messages", name + ": " + message);
 		}
 		return "redirect:/";
   }
