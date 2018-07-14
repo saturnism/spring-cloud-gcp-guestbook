@@ -23,14 +23,9 @@ import org.springframework.cloud.gcp.storage.GoogleStorageResource;
 import java.util.concurrent.TimeUnit;
 import org.springframework.web.servlet.view.RedirectView;
 
-import com.google.cloud.vision.v1.*;
-
 @Controller
 @SessionAttributes("name")
 public class FrontendController {
-	@Autowired
-	private ImageAnnotatorClient annotatorClient;
-
 	@Autowired
 	private GuestbookMessagesClient client;
 
@@ -50,30 +45,6 @@ public class FrontendController {
 	// We need to know the Project ID, because it's Cloud Storage bucket name
 	@Autowired
 	private GcpProjectIdProvider projectIdProvider;
-
-	private void analyzeImage(String uri) {
-		// After the image was written to GCS, analyze it with the GCS URI.
-		// Note: It's also possible to analyze an image embedded in the
-		// request as a Base64 encoded payload.
-		List<AnnotateImageRequest> requests = new ArrayList<>();
-		ImageSource imgSrc = ImageSource.newBuilder()
-			.setGcsImageUri(uri).build();
-		Image img = Image.newBuilder().setSource(imgSrc).build();
-		Feature feature = Feature.newBuilder()
-			.setType(Feature.Type.LABEL_DETECTION).build();
-		AnnotateImageRequest request = AnnotateImageRequest
-			.newBuilder()
-			.addFeatures(feature).setImage(img)
-			.build();
-
-		requests.add(request);
-		BatchAnnotateImagesResponse responses = 
-			annotatorClient.batchAnnotateImages(requests);
-		// We send in one image, expecting just one response in batch
-		AnnotateImageResponse response = responses.getResponses(0);
-
-		System.out.println(response);
-	}
 
 	@GetMapping("/")
 	public String index(Model model) {
@@ -108,9 +79,6 @@ public class FrontendController {
 			try (OutputStream os = resource.getOutputStream()) {
 				os.write(file.getBytes());
 			}
-
-			// After written to GCS, analyze the image.
-			analyzeImage(bucket + "/" + filename);
 		}
 
 		if (message != null && !message.trim().isEmpty()) {
