@@ -41,6 +41,12 @@ spec:
           mountPath: "/etc/credentials"
           readOnly: true
         env:
+        - name: SPRING_CLOUD_CONFIG_ENABLED
+          value: "false"
+        - name: SPRING_CLOUD_GCP_CONFIG_ENABLED
+          value: "false"
+        - name: MESSAGES_ENDPOINT
+          value: http://guestbook-service:8080/guestbookMessages
         - name: SPRING_PROFILES_ACTIVE
           value: cloud
         - name: GOOGLE_APPLICATION_CREDENTIALS
