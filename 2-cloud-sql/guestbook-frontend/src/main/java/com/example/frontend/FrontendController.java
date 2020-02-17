@@ -31,9 +31,9 @@ public class FrontendController {
 		model.addAttribute("name", name);
 		if (message != null && !message.trim().isEmpty()) {
 			// Post the message to the backend service
-			Map<String, String> payload = new HashMap<>();
-			payload.put("name", name);
-			payload.put("message", message);
+			GuestbookMessage payload = new GuestbookMessage();
+			payload.setName(name);
+			payload.setMessage(message);
 			client.add(payload);
 		}
 		return "redirect:/";

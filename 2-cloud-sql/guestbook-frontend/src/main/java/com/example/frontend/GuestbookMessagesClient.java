@@ -13,12 +13,12 @@ import java.util.Map;
 	url="${messages.endpoint:http://localhost:8081/guestbookMessages}")
 public interface GuestbookMessagesClient {
 	@RequestMapping(method=RequestMethod.GET, path="/")
-	Resources<Map> getMessages();
+	PagedModel<GuestbookMessage> getMessages();
 	
 	@RequestMapping(method=RequestMethod.GET, path="/{id}")
-	Map getMessage(@PathVariable("id") long messageId);
+	GuestbookMessage getMessage(@PathVariable("id") long messageId);
 	
 	@RequestMapping(method=RequestMethod.POST, path="/")
-	Resource<Map> add(@RequestBody Map message);
+	GuestbookMessage add(@RequestBody GuestbookMessage message);
 }
 
