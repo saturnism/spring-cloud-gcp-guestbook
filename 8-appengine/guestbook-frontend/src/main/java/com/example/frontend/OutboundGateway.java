@@ -6,4 +6,3 @@ import org.springframework.integration.annotation.MessagingGateway;
 public interface OutboundGateway {
 	void publishMessage(String message);
 }
-
