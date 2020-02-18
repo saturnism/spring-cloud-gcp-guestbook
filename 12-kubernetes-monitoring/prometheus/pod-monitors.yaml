@@ -1,14 +1,16 @@
 apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
+kind: PodMonitor
 metadata:
   name: guestbook-frontend
   labels:
     app: guestbook-frontend
 spec:
+  namespaceSelector:
+    any: true
   selector:
     matchLabels:
       app: guestbook-frontend
-  endpoints:
+  podMetricsEndpoints:
   - port: metrics
     path: /actuator/prometheus
     interval: 15s

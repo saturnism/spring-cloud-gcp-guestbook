@@ -16,6 +16,10 @@ spec:
     any: true
   serviceMonitorNamespaceSelector:
     any: true
+  podMonitorSelector:
+    any: true
+  podMonitorNamespaceSelector:
+    any: true
   enableAdminAPI: false
   podMetadata:
     labels:
