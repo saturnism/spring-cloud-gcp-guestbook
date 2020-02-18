@@ -44,6 +44,8 @@ spec:
           value: cloud
         - name: GOOGLE_APPLICATION_CREDENTIALS
           value: /etc/credentials/service-account.json
+        - name: PORT
+          value: "8080"
         ports:
         - name: http
           containerPort: 8080
