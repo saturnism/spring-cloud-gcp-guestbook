@@ -22,7 +22,7 @@ public class FrontendApplication {
 		SpringApplication.run(FrontendApplication.class, args);
 	}
 
-	@Bean
+    @Bean
 	@ServiceActivator(inputChannel = "messagesOutputChannel")
 	public MessageHandler messageSender(PubSubTemplate pubsubTemplate) {
   	  return new PubSubMessageHandler(pubsubTemplate, "messages");

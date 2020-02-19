@@ -6,8 +6,13 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.*;
 import java.util.*;
+// Use Lombok to inject Slf4J logger
+import lombok.extern.slf4j.Slf4j;
+
+// Add imports
 import org.springframework.cloud.gcp.pubsub.core.*;
 
+// Add imports for Resource
 import org.springframework.cloud.gcp.core.GcpProjectIdProvider;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.context.ApplicationContext;
@@ -16,34 +21,29 @@ import org.springframework.core.io.WritableResource;
 import org.springframework.util.StreamUtils;
 import java.io.*;
 
+// Add Vision API imports
+import org.springframework.cloud.gcp.vision.CloudVisionTemplate;
+import com.google.cloud.vision.v1.Feature.Type;
+import com.google.cloud.vision.v1.AnnotateImageResponse;
+
 import org.springframework.http.*;
-
-import java.net.URL;
-import org.springframework.cloud.gcp.storage.GoogleStorageResource;
-import java.util.concurrent.TimeUnit;
-import org.springframework.web.servlet.view.RedirectView;
-
-import com.google.cloud.vision.v1.*;
 
 @Controller
 @SessionAttributes("name")
+// Add Slf4j
+@Slf4j
+
 public class FrontendController {
 	@Autowired
-	private ImageAnnotatorClient annotatorClient;
-
-	@Autowired
 	private GuestbookMessagesClient client;
-
-	@Autowired
-	private PubSubTemplate pubSubTemplate;
-
-	@Autowired
-	private OutboundGateway outboundGateway;
 	
 	@Value("${greeting:Hello}")
 	private String greeting;
 
-	// We need the ApplicationContext in order to create a new Resource.
+    @Autowired
+	private OutboundGateway outboundGateway;
+
+    // We need the ApplicationContext in order to create a new Resource.
 	@Autowired
 	private ApplicationContext context;
 
@@ -51,30 +51,9 @@ public class FrontendController {
 	@Autowired
 	private GcpProjectIdProvider projectIdProvider;
 
-	private void analyzeImage(String uri) {
-		// After the image was written to GCS, analyze it with the GCS URI.
-		// Note: It's also possible to analyze an image embedded in the
-		// request as a Base64 encoded payload.
-		List<AnnotateImageRequest> requests = new ArrayList<>();
-		ImageSource imgSrc = ImageSource.newBuilder()
-			.setGcsImageUri(uri).build();
-		Image img = Image.newBuilder().setSource(imgSrc).build();
-		Feature feature = Feature.newBuilder()
-			.setType(Feature.Type.LABEL_DETECTION).build();
-		AnnotateImageRequest request = AnnotateImageRequest
-			.newBuilder()
-			.addFeatures(feature).setImage(img)
-			.build();
-
-		requests.add(request);
-		BatchAnnotateImagesResponse responses = 
-			annotatorClient.batchAnnotateImages(requests);
-		// We send in one image, expecting just one response in batch
-		AnnotateImageResponse response = responses.getResponses(0);
-
-		System.out.println(response);
-	}
-
+    @Autowired
+	private CloudVisionTemplate visionTemplate;
+	
 	@GetMapping("/")
 	public String index(Model model) {
 		if (model.containsAttribute("name")) {
@@ -86,13 +65,10 @@ public class FrontendController {
 	}
 	
 	@PostMapping("/post")
-	public String post(
-		@RequestParam(name="file", required=false) MultipartFile file,
-		@RequestParam String name, @RequestParam String message, Model model)
-		throws IOException {
+	public String post(@RequestParam(name="file", required=false) MultipartFile file, @RequestParam String name, @RequestParam String message, Model model) throws IOException {
 		model.addAttribute("name", name);
 
-		String filename = null;
+        String filename = null;
 		if (file != null && !file.isEmpty()
 			&& file.getContentType().equals("image/jpeg")) {
 
@@ -101,7 +77,7 @@ public class FrontendController {
 
 			// Generate a random file name
 			filename = UUID.randomUUID().toString() + ".jpg";
-			WritableResource resource = (WritableResource)
+			WritableResource resource = (WritableResource) 
 				context.getResource(bucket + "/" + filename);
 
 			// Write the file to Cloud Storage using WritableResource
@@ -109,27 +85,35 @@ public class FrontendController {
 				os.write(file.getBytes());
 			}
 
-			// After written to GCS, analyze the image.
-			analyzeImage(bucket + "/" + filename);
+            AnnotateImageResponse response = visionTemplate
+				.analyzeImage(resource, Type.LABEL_DETECTION);
+		    log.info(response.toString());
+
 		}
 
 		if (message != null && !message.trim().isEmpty()) {
+            // Add a log message at the beginning
+			log.info("Saving message");
+
 			// Post the message to the backend service
-			Map<String, String> payload = new HashMap<>();
-			payload.put("name", name);
-			payload.put("message", message);
-
-			// Store the generated file name in the database  
-			payload.put("imageUri", filename);
-
+			GuestbookMessage payload = new GuestbookMessage();
+			payload.setName(name);
+			payload.setMessage(message);
+            // Store the generated file name in the database  
+			payload.setImageUri(filename);
 			client.add(payload);
 
-			outboundGateway.publishMessage(name + ": " + message);
+            // Add a log message at the end.
+			log.info("Saved message");
+
+
+            // At the very end, publish the message
+            outboundGateway.publishMessage(name + ": " + message);
 		}
 		return "redirect:/";
-	}
+  }
 
-	// ".+" is necessary to capture URI with filename extension
+  // ".+" is necessary to capture URI with filename extension
 	@GetMapping("/image/{filename:.+}")
 	public ResponseEntity<Resource> file(@PathVariable String filename) {
 		String bucket = "gs://" + projectIdProvider.getProjectId();
@@ -141,22 +125,6 @@ public class FrontendController {
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.IMAGE_JPEG);
 		return new ResponseEntity<>(image, headers, HttpStatus.OK);
-	}
-
-	@GetMapping("/redirect/{filename:.+}")
-	public RedirectView redirect(@PathVariable String filename)
-		throws IOException {
-
-		String bucket = "gs://" + projectIdProvider.getProjectId();
-
-		GoogleStorageResource image = (GoogleStorageResource) context.getResource(bucket + "/" + filename);
-		// Construct a Signed URL that's only accessible for 1 minute
-		URL signedUrl = image.createSignedUrl(TimeUnit.MINUTES, 1);
-
-		// Send the URL via temporary redirect
-		RedirectView redirectView = new RedirectView(signedUrl.toString());
-		redirectView.setStatusCode(HttpStatus.TEMPORARY_REDIRECT);
-		return redirectView;
 	}
 
 }

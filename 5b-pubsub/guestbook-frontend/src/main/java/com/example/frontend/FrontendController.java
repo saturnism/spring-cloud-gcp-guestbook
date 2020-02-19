@@ -6,23 +6,28 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.*;
 import java.util.*;
+// Use Lombok to inject Slf4J logger
+import lombok.extern.slf4j.Slf4j;
+
+// Add imports
 import org.springframework.cloud.gcp.pubsub.core.*;
+
 
 @Controller
 @SessionAttributes("name")
+// Add Slf4j
+@Slf4j
+
 public class FrontendController {
 	@Autowired
 	private GuestbookMessagesClient client;
-
-	@Autowired
-	private PubSubTemplate pubSubTemplate;
-
-	@Autowired
-	private OutboundGateway outboundGateway;
 	
 	@Value("${greeting:Hello}")
 	private String greeting;
 
+    @Autowired
+	private OutboundGateway outboundGateway;
+	
 	@GetMapping("/")
 	public String index(Model model) {
 		if (model.containsAttribute("name")) {
@@ -37,13 +42,21 @@ public class FrontendController {
 	public String post(@RequestParam String name, @RequestParam String message, Model model) {
 		model.addAttribute("name", name);
 		if (message != null && !message.trim().isEmpty()) {
+            // Add a log message at the beginning
+			log.info("Saving message");
+
 			// Post the message to the backend service
-			Map<String, String> payload = new HashMap<>();
-			payload.put("name", name);
-			payload.put("message", message);
+			GuestbookMessage payload = new GuestbookMessage();
+			payload.setName(name);
+			payload.setMessage(message);
 			client.add(payload);
 
-			outboundGateway.publishMessage(name + ": " + message);
+            // Add a log message at the end.
+			log.info("Saved message");
+
+
+            // At the very end, publish the message
+            outboundGateway.publishMessage(name + ": " + message);
 		}
 		return "redirect:/";
   }
