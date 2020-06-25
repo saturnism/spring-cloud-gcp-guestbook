@@ -5,7 +5,7 @@ import org.springframework.hateoas.RepresentationModel;
 
 @Data
 public class GuestbookMessage extends RepresentationModel<GuestbookMessage> {
-  private String id;
+  private Long id;
 
   private String name;
 
